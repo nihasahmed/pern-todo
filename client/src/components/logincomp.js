@@ -2,6 +2,7 @@ import React, { Fragment, useState } from "react";
 import "./logincomp.css";
 import axios from "axios";
 import { useHistory } from "react-router";
+import { Link } from "react-router-dom";
 
 const LoginComp = () => {
   const [email, setemail] = useState("");
@@ -58,6 +59,9 @@ const LoginComp = () => {
             />
             <input type="submit" className="fadeIn fourth" value="Log In" />
           </form>
+          <div className="text-center ">
+            <Link to="/register">Register</Link>
+          </div>
         </div>
       </div>
     </Fragment>

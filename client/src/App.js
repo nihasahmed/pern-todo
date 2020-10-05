@@ -6,6 +6,7 @@ import "./App.css";
 import ProtectedRoute from "./components/protectedroute";
 import Todo from "./components/todo";
 import LoginComp from "./components/logincomp";
+import RegisterComp from "./components/register";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login">
           <LoginComp />
         </Route>
+        <Route exact path="/register" component={RegisterComp} />
         <Route path="*" component={() => "404 Page not found"} />
       </Switch>
     </Router>
