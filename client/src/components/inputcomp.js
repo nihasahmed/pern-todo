@@ -1,17 +1,34 @@
 import React, { Fragment, useState } from "react";
+import axios from "axios";
+import { useHistory } from "react-router";
 
 const InputComp = () => {
   const [desc, setdesc] = useState("");
+  const history = useHistory();
+
   const onSubmitForm = async (e) => {
     e.preventDefault();
     try {
-      const body = { desc };
-      const response = await fetch("http://localhost:5000/todo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      axios({
+        method: "post",
+        url: "http://localhost:5000/todo",
+        data: { desc },
+        withCredentials: true,
+      }).then((response) => {
+        console.log(response);
+        if (response.data.status === 200) {
+          console.log(response.data.message);
+          history.push({ pathname: "/empty" });
+          history.replace({
+            pathname: "/test",
+            state: {
+              response: response.data.message,
+            },
+          });
+        } else {
+          alert(response.data.message);
+        }
       });
-      window.location = "/";
     } catch (err) {
       console.log(err.message);
     }

@@ -1,14 +1,23 @@
 import React, { Fragment, useEffect, useState } from "react";
 import EditComp from "./editcomp";
+import axios from "axios";
 
 const ListComp = () => {
   const [toDos, setToDos] = useState([]);
 
   const getToDos = async () => {
     try {
-      const response = await fetch("http://localhost:5000/todo");
-      const jsonData = await response.json();
-      setToDos(jsonData);
+      axios({
+        method: "get",
+        url: "http://localhost:5000/todo",
+        withCredentials: true,
+      }).then((response) => {
+        if (response.data.status === 200) {
+          setToDos(response.data.data);
+        } else {
+          alert(response.data.message);
+        }
+      });
     } catch (err) {
       console.error(err.message);
     }
@@ -16,11 +25,18 @@ const ListComp = () => {
 
   const deleteToDo = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/todo/${id}`, {
-        method: "DELETE",
+      axios({
+        method: "delete",
+        url: `http://localhost:5000/todo/${id}`,
+        withCredentials: true,
+      }).then((response) => {
+        console.log(response);
+        if (response.data.status === 200) {
+          setToDos(toDos.filter((toDo) => toDo.id !== id));
+        } else {
+          alert(response.data.message);
+        }
       });
-
-      setToDos(toDos.filter((toDo) => toDo.id !== id));
     } catch (err) {
       console.log(err.message);
     }
@@ -29,7 +45,6 @@ const ListComp = () => {
   useEffect(() => {
     getToDos();
   }, []);
-  console.log(toDos);
   return (
     <Fragment>
       <table className="table mt-4">

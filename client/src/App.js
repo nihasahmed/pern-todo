@@ -1,19 +1,24 @@
-import React, { Fragment } from "react";
+import React from "react";
+import { Route, BrowserRouter as Router, Switch } from "react-router-dom";
 import "./App.css";
 
 //components
-import InputComp from "./components/inputcomp";
-import ListComp from "./components/listcomp";
-
+import ProtectedRoute from "./components/protectedroute";
+import Todo from "./components/todo";
+import LoginComp from "./components/logincomp";
 
 function App() {
   return (
-    <Fragment>
-      <div className="container">
-        <InputComp />
-        <ListComp/>
-      </div>
-    </Fragment>
+    <Router>
+      <Switch>
+        {/* <ProtectedRoute exact path="/test" component={Todo} /> */}
+        <ProtectedRoute path="/test" component={Todo} exact={true} />
+        <Route path="/login">
+          <LoginComp />
+        </Route>
+        <Route path="*" component={() => "404 Page not found"} />
+      </Switch>
+    </Router>
   );
 }
 

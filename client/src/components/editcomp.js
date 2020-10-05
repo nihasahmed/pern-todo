@@ -1,17 +1,36 @@
 import React, { Fragment, useState } from "react";
+import axios from "axios";
+import { useHistory } from "react-router";
 
 const EditComp = ({ toDo }) => {
   const [desc, setdesc] = useState(toDo.desc);
+  const history = useHistory();
+
   const updateToDo = async (e) => {
     e.preventDefault();
     try {
-      const body = { desc };
-      const response = await fetch(`http://localhost:5000/todo/${toDo.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      axios({
+        method: "put",
+        url: `http://localhost:5000/todo/${toDo.id}`,
+        data: { desc },
+        withCredentials: true,
+      }).then((response) => {
+        console.log(response);
+        if (response.data.status === 200) {
+          console.log(response.data.message);
+          history.push({ pathname: "/empty" });
+          history.replace({
+            pathname: "/test",
+            state: {
+              response: response.data.message,
+            },
+          });
+        } else if (response.data.status === 401) {
+          history.push({ pathname: "/login" });
+        } else {
+          alert(response.data.message);
+        }
       });
-      window.location = "/";
     } catch (err) {
       console.log(err.message);
     }
@@ -31,7 +50,7 @@ const EditComp = ({ toDo }) => {
       <div
         className="modal fade"
         id={`id${toDo.id}`}
-        tabindex="-1"
+        tabIndex="-1"
         role="dialog"
         aria-labelledby="exampleModalLabel"
         aria-hidden="true"

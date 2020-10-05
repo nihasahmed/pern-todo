@@ -14,12 +14,17 @@ initializePassport(passport, getUserByEmail, getUserByID);
 //middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:3000", // <-- location of the react app were connecting to
+  })
+);
 app.use(flash());
 app.use(
   session({
     secret: "secretkey1234",
-    cookie: { _expires: 1 * 60 * 1000 }, //1 minutes
+    cookie: { _expires: 10 * 60 * 1000 }, //10 minutes
     resave: false,
     saveUninitialized: false,
   })
@@ -37,55 +42,68 @@ app.use(passport.session());
 //----------------------------------------- END OF MIDDLEWARE---------------------------------------------------
 
 //routes
-app.post("/todo", async (req, res) => {
+app.post("/todo", checkAuthenticated, async (req, res) => {
   try {
     const { desc } = req.body;
     const newtodo = await pool.query(
-      'INSERT INTO todo("desc") VALUES ($1) RETURNING *',
-      [desc]
+      'INSERT INTO todo("desc","user_id") VALUES ($1, $2) RETURNING *',
+      [desc, req.user.user_id]
     );
-    res.json(newtodo.rows[0]);
+    res.json({ status: 200, message: "Added todo successfully!" });
   } catch (err) {
     console.error(err.message);
+    res.json({ status: 500, message: "Error while adding todo" });
   }
 });
-app.get("/todo", async (req, res) => {
+app.get("/todo", checkAuthenticated, async (req, res) => {
   try {
-    const newtodo = await pool.query("SELECT * FROM todo");
-    res.json(newtodo.rows);
+    const newtodo = await pool.query("SELECT * FROM todo where user_id = $1", [
+      req.user.user_id,
+    ]);
+    res.json({ status: 200, message: "Success", data: newtodo.rows });
   } catch (err) {
     console.error(err.message);
+    res.json({ status: 500, message: "Error" });
   }
 });
-app.get("/todo/:id", async (req, res) => {
+app.get("/todo/:id", checkAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const newtodo = await pool.query("SELECT * FROM todo WHERE id = $1", [id]);
-    res.json(newtodo.rows);
+    const newtodo = await pool.query(
+      "SELECT * FROM todo WHERE id = $1 AND user_id = $2",
+      [id, req.user.user_id]
+    );
+    res.json({ status: 200, message: "Success", data: newtodo.rows });
   } catch (err) {
     console.error(err.message);
+    res.json({ status: 500, message: "Error" });
   }
 });
-app.put("/todo/:id", async (req, res) => {
+app.put("/todo/:id", checkAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { desc } = req.body;
     const newtodo = await pool.query(
-      'UPDATE todo SET "desc"=$1 WHERE id = $2 RETURNING *',
-      [desc, id]
+      'UPDATE todo SET "desc"=$1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [desc, id, req.user.user_id]
     );
-    res.json(newtodo.rows);
+    res.json({ status: 200, message: "Success" });
   } catch (err) {
     console.error(err.message);
+    res.json({ status: 500, message: "Error" });
   }
 });
-app.delete("/todo/:id", async (req, res) => {
+app.delete("/todo/:id", checkAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const newtodo = await pool.query("DELETE FROM todo WHERE id = $1", [id]);
-    res.json("Todo deleted");
+    const newtodo = await pool.query(
+      "DELETE FROM todo WHERE id = $1 AND user_id =$2",
+      [id, req.user.user_id]
+    );
+    res.json({ status: 200, message: "Success" });
   } catch (err) {
     console.error(err.message);
+    res.json({ status: 500, message: "Error" });
   }
 });
 
@@ -97,18 +115,6 @@ app.get("/testfail", async (req, res) => {
   console.log(req.flash("error"));
   res.json({ status: 200, message: "sorry, you are not logged in!" });
 });
-
-// app.post(
-//   "/login",
-//   checkNotAuthenticated,
-//   passport.authenticate("local", {
-//     failureRedirect: "/testfail",
-//     failureFlash: true,
-//   }),
-//   function (req, res) {
-//     res.json({ status: 200, message: "User successfully logged in!" });
-//   }
-// );
 
 app.post("/login", checkNotAuthenticated, async (req, res, next) => {
   passport.authenticate("local", function (err, user, info) {
@@ -122,6 +128,7 @@ app.post("/login", checkNotAuthenticated, async (req, res, next) => {
       if (err) {
         return res.json({ status: 500, message: err });
       }
+      // req.session.user = req.user;
       return res.json({ status: 200, message: "User successfully logged in!" });
     });
   })(req, res, next);
